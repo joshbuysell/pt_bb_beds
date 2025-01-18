@@ -8,17 +8,28 @@ import zipfile
 FONT_PATH = "./Monaco.ttf"
 FONT_SIZE = 65
 IMAGE_FOLDER = "./images"
-DEFAULT_PRICE_FILE = "./price.xlsx"
+DEFAULT_PRICE_FILE = "./price.xlsx"  # Шлях до дефолтного Excel-файлу
 
 
+@st.cache_data
 def read_prices(file):
+    """Читає Excel-файл із цінами та кешує результат."""
     df = pd.read_excel(file)
     df['Назва'] = df['Назва'].str.lower()
     return {row['Назва']: {"Ліжечко": row["Ліжечко"], "Мятник": row["Мятник"], "Шухляда": row["Шухляда"]}
             for _, row in df.iterrows()}
 
 
+@st.cache_data
+def process_image(file_name, prices):
+    """Обробляє одне зображення та кешує результат."""
+    image_path = os.path.join(IMAGE_FOLDER, file_name)
+    image = Image.open(image_path).convert("RGBA")
+    return add_price_with_centered_text(image, prices, file_name)
+
+
 def add_price_with_centered_text(image, prices, file_name):
+    """Додає текст із цінами до зображення."""
     draw = ImageDraw.Draw(image)
     file_name = os.path.splitext(file_name)[0].lower()
 
@@ -51,19 +62,14 @@ def add_price_with_centered_text(image, prices, file_name):
     return image
 
 
-def process_image(file_name, prices):
-    """Обробляє одне зображення і повертає оброблене зображення."""
-    image_path = os.path.join(IMAGE_FOLDER, file_name)
-    image = Image.open(image_path).convert("RGBA")
-    processed_image = add_price_with_centered_text(image, prices, file_name)
-    return processed_image
-
-
+# Інтерфейс Streamlit
 st.title("Динамічний генератор цін для зображень")
 
+# Визначення режиму
 is_mobile = st.sidebar.checkbox("Мобільний режим", value=False)
-columns_count = 1 if is_mobile else 3
+columns_count = 1 if is_mobile else 3  # Одна колонка для мобільного режиму, три для настільного
 
+# Завантаження Excel
 use_default = st.sidebar.checkbox("Використовувати стандартний Excel-файл", value=True)
 if "prices" not in st.session_state:
     st.session_state["prices"] = {}
@@ -81,6 +87,7 @@ if 'price_file_path' in locals() and os.path.exists(price_file_path):
     if not st.session_state["prices"]:
         st.session_state["prices"] = read_prices(price_file_path)
 
+    # Вкладки для функціоналу
     tab1, tab2 = st.tabs(["Редагування цін", "Завантаження результатів"])
 
     with tab1:
@@ -96,6 +103,7 @@ if 'price_file_path' in locals() and os.path.exists(price_file_path):
                 file_key = os.path.splitext(file_name)[0].lower()
                 prices = st.session_state["prices"]
 
+                # Текстові поля для редагування цін
                 prices[file_key]["Ліжечко"] = col.text_input(f"Ліжечко ({file_name})", value=prices[file_key]["Ліжечко"])
                 prices[file_key]["Мятник"] = col.text_input(f"Маятник ({file_name})", value=prices[file_key]["Мятник"])
                 prices[file_key]["Шухляда"] = col.text_input(f"Шухляда ({file_name})", value=prices[file_key]["Шухляда"])
