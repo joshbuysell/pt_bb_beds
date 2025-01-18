@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import io
 import zipfile
+import tempfile
 
 FONT_PATH = "./monaco.ttf"
 FONT_SIZE = 65
@@ -44,7 +45,10 @@ def add_price_with_centered_text(image, prices, file_name):
             fill=(255, 255, 255, 255)
         )
 
-        font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+        try:
+            font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+        except OSError:
+            font = ImageFont.load_default()  # Використовує стандартний шрифт
 
         y_offset = height - overlay_height + 30
         line_spacing = 30
@@ -81,9 +85,13 @@ if use_default:
 else:
     uploaded_price_file = st.sidebar.file_uploader("Завантажте Excel-файл із цінами", type=["xlsx"])
     if uploaded_price_file:
-        price_file_path = uploaded_price_file
+        # Збереження завантаженого файлу у тимчасовий файл
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
+            tmp_file.write(uploaded_price_file.read())
+            price_file_path = tmp_file.name
 
-if 'price_file_path' in locals() and os.path.exists(price_file_path):
+# Перевірка наявності файлу
+if price_file_path and os.path.exists(price_file_path):
     if not st.session_state["prices"]:
         st.session_state["prices"] = read_prices(price_file_path)
 
