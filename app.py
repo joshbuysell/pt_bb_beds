@@ -14,8 +14,15 @@ DEFAULT_PRICE_FILE = "./price.xlsx"  # Шлях до дефолтного Excel-
 
 @st.cache_data
 def read_prices(file):
-    """Читає Excel-файл із цінами та кешує результат."""
+    """Читає Excel-файл із цінами та перевіряє наявність потрібних стовпців."""
     df = pd.read_excel(file)
+    required_columns = ['Назва', 'Ліжечко', 'Мятник', 'Шухляда']
+
+    # Перевірка наявності необхідних стовпців
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"В Excel-файлі відсутні необхідні стовпці: {', '.join(missing_columns)}")
+
     df['Назва'] = df['Назва'].str.lower()
     return {row['Назва']: {"Ліжечко": row["Ліжечко"], "Мятник": row["Мятник"], "Шухляда": row["Шухляда"]}
             for _, row in df.iterrows()}
@@ -88,6 +95,10 @@ else:
         # Очищення кешу після завантаження нового файлу
         st.cache_data.clear()
 
+        # Додавання розширення, якщо його немає
+        if not uploaded_price_file.name.endswith(".xlsx"):
+            uploaded_price_file.name += ".xlsx"
+
         # Збереження завантаженого файлу у тимчасовий файл
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
             tmp_file.write(uploaded_price_file.read())
@@ -95,8 +106,11 @@ else:
 
 # Перевірка наявності файлу
 if price_file_path and os.path.exists(price_file_path):
-    # Оновлення цін при зміні файлу
-    st.session_state["prices"] = read_prices(price_file_path)
+    try:
+        # Оновлення цін із нового файлу
+        st.session_state["prices"] = read_prices(price_file_path)
+    except ValueError as e:
+        st.error(f"Помилка при обробці файлу: {e}")
 
     # Вкладки для функціоналу
     tab1, tab2 = st.tabs(["Редагування цін", "Завантаження результатів"])
@@ -117,7 +131,7 @@ if price_file_path and os.path.exists(price_file_path):
                 # Текстові поля для редагування цін
                 prices[file_key]["Ліжечко"] = col.text_input(f"Ліжечко ({file_name})", value=prices[file_key]["Ліжечко"])
                 prices[file_key]["Мятник"] = col.text_input(f"Маятник ({file_name})", value=prices[file_key]["Мятник"])
-                prices[file_key]["Шухляда"] = col.text_input(f"Шухляда ({file_name})", value=prices[file_key]["Шухляда"])
+                prices[file_key]["Шухляда"] = col.text_input(f"Шухлядa ({file_name})", value=prices[file_key]["Шухляда"])
 
                 processed_image = process_image(file_name, prices)
 
