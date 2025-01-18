@@ -6,7 +6,7 @@ import io
 import zipfile
 import tempfile
 
-FONT_PATH = "./monaco.ttf"
+FONT_PATH = "./Monaco.ttf"
 FONT_SIZE = 65
 IMAGE_FOLDER = "./images"
 DEFAULT_PRICE_FILE = "./price.xlsx"  # Шлях до дефолтного Excel-файлу
@@ -85,6 +85,9 @@ if use_default:
 else:
     uploaded_price_file = st.sidebar.file_uploader("Завантажте Excel-файл із цінами", type=["xlsx"])
     if uploaded_price_file:
+        # Очищення кешу після завантаження нового файлу
+        st.cache_data.clear()
+
         # Збереження завантаженого файлу у тимчасовий файл
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
             tmp_file.write(uploaded_price_file.read())
@@ -92,8 +95,8 @@ else:
 
 # Перевірка наявності файлу
 if price_file_path and os.path.exists(price_file_path):
-    if not st.session_state["prices"]:
-        st.session_state["prices"] = read_prices(price_file_path)
+    # Оновлення цін при зміні файлу
+    st.session_state["prices"] = read_prices(price_file_path)
 
     # Вкладки для функціоналу
     tab1, tab2 = st.tabs(["Редагування цін", "Завантаження результатів"])
