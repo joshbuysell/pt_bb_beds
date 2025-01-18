@@ -128,7 +128,7 @@ if price_file_path and os.path.exists(price_file_path):
                 col.download_button(
                     label="Завантажити зображення",
                     data=processed_files[file_name],
-                    file_name=f"processed_{file_name}",
+                    file_name=f"{file_name}",
                     mime="image/png"
                 )
 
