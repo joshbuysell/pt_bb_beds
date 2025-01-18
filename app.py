@@ -5,7 +5,7 @@ import os
 import io
 import zipfile
 
-FONT_PATH = "./Monaco.ttf"
+FONT_PATH = "./monaco.ttf"
 FONT_SIZE = 65
 IMAGE_FOLDER = "./images"
 DEFAULT_PRICE_FILE = "./price.xlsx"  # Шлях до дефолтного Excel-файлу
