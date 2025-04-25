@@ -9,23 +9,31 @@ import tempfile
 FONT_PATH = "./Monaco.ttf"
 FONT_SIZE = 65
 IMAGE_FOLDER = "./images"
-DEFAULT_PRICE_FILE = "./price.xlsx"  # Шлях до дефолтного Excel-файлу
+DEFAULT_PRICE_FILE = "./lts_price.xlsx"  # Шлях до дефолтного Excel-файлу
 
 
 @st.cache_data
 def read_prices(file):
     """Читає Excel-файл із цінами та перевіряє наявність потрібних стовпців."""
     df = pd.read_excel(file)
-    required_columns = ['Назва', 'Ліжечко', 'Мятник', 'Шухляда']
+    required_columns = ["Назва", "Ліжечко", "Мятник", "Шухляда"]
 
     # Перевірка наявності необхідних стовпців
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
-        raise ValueError(f"В Excel-файлі відсутні необхідні стовпці: {', '.join(missing_columns)}")
+        raise ValueError(
+            f"В Excel-файлі відсутні необхідні стовпці: {', '.join(missing_columns)}"
+        )
 
-    df['Назва'] = df['Назва'].str.lower()
-    return {row['Назва']: {"Ліжечко": row["Ліжечко"], "Мятник": row["Мятник"], "Шухляда": row["Шухляда"]}
-            for _, row in df.iterrows()}
+    df["Назва"] = df["Назва"].str.lower()
+    return {
+        row["Назва"]: {
+            "Ліжечко": row["Ліжечко"],
+            "Мятник": row["Мятник"],
+            "Шухляда": row["Шухляда"],
+        }
+        for _, row in df.iterrows()
+    }
 
 
 @st.cache_data
@@ -48,8 +56,7 @@ def add_price_with_centered_text(image, prices, file_name):
         overlay_height = 350
 
         draw.rectangle(
-            [(0, height - overlay_height), (width, height)],
-            fill=(255, 255, 255, 255)
+            [(0, height - overlay_height), (width, height)], fill=(255, 255, 255, 255)
         )
 
         try:
@@ -67,8 +74,13 @@ def add_price_with_centered_text(image, prices, file_name):
             draw.text((x_position, y_position), text, font=font, fill=(0, 0, 0))
 
         draw_centered_text(f"Ліжечко: {price_data['Ліжечко']} грн", y_offset)
-        draw_centered_text(f"З маятником: {price_data['Мятник']} грн", y_offset + 65 + line_spacing)
-        draw_centered_text(f"З шухлядою: {price_data['Шухляда']} грн", y_offset + 130 + line_spacing * 2)
+        draw_centered_text(
+            f"З маятником: {price_data['Мятник']} грн", y_offset + 65 + line_spacing
+        )
+        draw_centered_text(
+            f"З шухлядою: {price_data['Шухляда']} грн",
+            y_offset + 130 + line_spacing * 2,
+        )
 
     return image
 
@@ -78,7 +90,9 @@ st.title("Динамічний генератор цін для зображен
 
 # Визначення режиму
 is_mobile = st.sidebar.checkbox("Мобільний режим", value=False)
-columns_count = 1 if is_mobile else 3  # Одна колонка для мобільного режиму, три для настільного
+columns_count = (
+    1 if is_mobile else 3
+)  # Одна колонка для мобільного режиму, три для настільного
 
 # Завантаження Excel
 use_default = st.sidebar.checkbox("Використовувати стандартний Excel-файл", value=True)
@@ -90,7 +104,9 @@ if use_default:
     st.sidebar.info("Використовується стандартний Excel-файл.")
     price_file_path = DEFAULT_PRICE_FILE
 else:
-    uploaded_price_file = st.sidebar.file_uploader("Завантажте Excel-файл із цінами", type=["xlsx"])
+    uploaded_price_file = st.sidebar.file_uploader(
+        "Завантажте Excel-файл із цінами", type=["xlsx"]
+    )
     if uploaded_price_file:
         # Очищення кешу після завантаження нового файлу
         st.cache_data.clear()
@@ -129,9 +145,15 @@ if price_file_path and os.path.exists(price_file_path):
                 prices = st.session_state["prices"]
 
                 # Текстові поля для редагування цін
-                prices[file_key]["Ліжечко"] = col.text_input(f"Ліжечко ({file_name})", value=prices[file_key]["Ліжечко"])
-                prices[file_key]["Мятник"] = col.text_input(f"Маятник ({file_name})", value=prices[file_key]["Мятник"])
-                prices[file_key]["Шухляда"] = col.text_input(f"Шухлядa ({file_name})", value=prices[file_key]["Шухляда"])
+                prices[file_key]["Ліжечко"] = col.text_input(
+                    f"Ліжечко ({file_name})", value=prices[file_key]["Ліжечко"]
+                )
+                prices[file_key]["Мятник"] = col.text_input(
+                    f"Маятник ({file_name})", value=prices[file_key]["Мятник"]
+                )
+                prices[file_key]["Шухляда"] = col.text_input(
+                    f"Шухлядa ({file_name})", value=prices[file_key]["Шухляда"]
+                )
 
                 processed_image = process_image(file_name, prices)
 
@@ -140,13 +162,17 @@ if price_file_path and os.path.exists(price_file_path):
                 buf.seek(0)
                 processed_files[file_name] = buf.getvalue()
 
-                col.image(processed_image, caption=f"Оновлене: {file_name}", use_container_width=True)
+                col.image(
+                    processed_image,
+                    caption=f"Оновлене: {file_name}",
+                    use_container_width=True,
+                )
 
                 col.download_button(
                     label="Завантажити зображення",
                     data=processed_files[file_name],
                     file_name=f"{file_name}",
-                    mime="image/png"
+                    mime="image/png",
                 )
 
     with tab2:
@@ -162,5 +188,5 @@ if price_file_path and os.path.exists(price_file_path):
                 label="Завантажити всі оброблені зображення (ZIP)",
                 data=zip_buffer,
                 file_name="processed_images.zip",
-                mime="application/zip"
+                mime="application/zip",
             )
